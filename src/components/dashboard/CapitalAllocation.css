@@ -1,0 +1,14 @@
+.allocation-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.allocation-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.allocation-card li {
+  margin-bottom: 8px;
+}

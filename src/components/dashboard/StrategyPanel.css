@@ -1,0 +1,36 @@
+.strategy-panel h3 {
+  margin-bottom: 12px;
+}
+
+.strategy-box {
+  background: #0b2e5a;
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.chart-placeholder {
+  height: 160px;
+  background: linear-gradient(180deg, #0f3d7a, #09264d);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
+  color: #cbd5f5;
+}
+
+.trade-details {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #1d4ed8;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}

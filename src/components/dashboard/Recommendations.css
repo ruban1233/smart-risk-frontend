@@ -1,0 +1,244 @@
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.recommendations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.recommendations-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recommendations-header h3 i {
+  color: #ffd700;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(100, 100, 150, 0.2);
+  color: #64b5f6;
+  border: 1px solid rgba(100, 181, 246, 0.3);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background: rgba(100, 100, 150, 0.3);
+  transform: rotate(90deg);
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.recommendation-item {
+  background: rgba(40, 40, 80, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(100, 100, 150, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.recommendation-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  border-color: rgba(100, 181, 246, 0.4);
+}
+
+.stock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.stock-symbol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stock-symbol .symbol {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stock-symbol .name {
+  font-size: 12px;
+  color: #aaaacc;
+}
+
+.stock-price {
+  text-align: right;
+}
+
+.stock-price .price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.stock-price .change {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.stock-price .change.positive {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.stock-price .change.negative {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.stock-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(30, 30, 70, 0.5);
+  border-radius: 8px;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.detail .label {
+  font-size: 12px;
+  color: #aaaacc;
+}
+
+.detail .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.detail .value.target {
+  color: #4caf50;
+}
+
+.detail .value.risk-low {
+  color: #4caf50;
+}
+
+.detail .value.risk-medium {
+  color: #ff9800;
+}
+
+.detail .value.risk-high {
+  color: #f44336;
+}
+
+.stock-analysis {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(30, 30, 70, 0.3);
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+}
+
+.stock-analysis .reason {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.stock-analysis .analysis {
+  font-size: 13px;
+  color: #64b5f6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-style: italic;
+}
+
+.stock-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.action-btn i {
+  font-size: 14px;
+}
+
+.action-btn.buy {
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  color: white;
+}
+
+.action-btn.buy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.action-btn.watch {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ff9800;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.action-btn.watch:hover {
+  background: rgba(255, 152, 0, 0.3);
+}
+
+.action-btn.details {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196f3;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.action-btn.details:hover {
+  background: rgba(33, 150, 243, 0.3);
+}
+
+@media (max-width: 768px) {
+  .stock-details,
+  .stock-actions {
+    grid-template-columns: 1fr;
+  }
+}

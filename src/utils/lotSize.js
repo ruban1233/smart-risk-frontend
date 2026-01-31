@@ -1,0 +1,51 @@
+/* src/utils/lotSize.js */
+
+export const LOT_SIZE = {
+  // NSE INDEX LOT SIZES
+  "NIFTY 50": 50,
+  "BANKNIFTY": 15,
+  "FINNIFTY": 40,
+  "MIDCAPNIFTY": 75,
+  "NIFTY IT": 25,
+  "NIFTY AUTO": 50,
+  "NIFTY PHARMA": 50,
+  "NIFTY METAL": 40,
+  "NIFTY FMCG": 40,
+  "NIFTY PSU BANK": 40,
+  "NIFTY ENERGY": 40,
+  "NIFTY REALTY": 40,
+  "SENSEX": 10,
+
+  // MOST TRADED STOCK LOT SIZES
+  "RELIANCE": 250,
+  "TCS": 150,
+  "HDFCBANK": 300,
+  "INFY": 300,
+  "ICICIBANK": 700,
+  "SBIN": 1500,
+  "HUL": 300,
+  "LT": 150,
+  "KOTAKBANK": 400,
+  "AXISBANK": 1200,
+  "BAJFINANCE": 25,
+  "ADANIENT": 250,
+  "ADANIPORTS": 500,
+  "MARUTI": 50,
+  "TITAN": 150,
+  "SUNPHARMA": 600,
+  "ITC": 1600,
+  "ULTRACEMCO": 100,
+  "WIPRO": 1500,
+  "POWERGRID": 2700,
+  "NTPC": 5700,
+  "ONGC": 3850,
+  "JSWSTEEL": 675,
+  "TATASTEEL": 4250,
+  "TATAMOTORS": 570,
+  "HCLTECH": 350,
+  "BHARTIARTL": 500,
+  "DIVISLAB": 100,
+  "HEROMOTOCO": 100,
+
+  // You can add more stocks anytime
+};

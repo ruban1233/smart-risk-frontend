@@ -1,0 +1,10 @@
+.strategy-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.strategy-card ul {
+  padding-left: 18px;
+}

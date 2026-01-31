@@ -1,0 +1,11 @@
+.dashboard {
+  padding: 30px;
+  background: #f4f6fa;
+  min-height: 100vh;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
