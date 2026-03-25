@@ -1,12 +1,18 @@
-.risk-card {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-  width: 300px;
+.risk-signal-card {
+  background: #121212;
+  padding: 16px;
+  border-radius: 8px;
+  color: white;
 }
 
-.green {
-  font-size: 22px;
-  font-weight: bold;
-  color: #16a34a;
+.traffic.green {
+  color: #00ff88;
+}
+
+.traffic.yellow {
+  color: #ffcc00;
+}
+
+.traffic.red {
+  color: #ff4444;
 }

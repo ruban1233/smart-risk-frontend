@@ -1,89 +1,62 @@
 import React, { useState } from "react";
 import { fetchInvestmentPlanner } from "../services/api";
-import TrafficLight from "../components/dashboard/TrafficLight";
+
 import AssetCard from "../components/dashboard/AssetCard";
+import AllocationCard from "../components/dashboard/AllocationCard";
 import AllocationPieChart from "../components/charts/AllocationPieChart";
 
 function InvestmentPlanner() {
+
   const [capital, setCapital] = useState("");
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // ===============================
-  // CAPITAL → CATEGORY (UI ONLY)
+  // INVESTOR CATEGORY
   // ===============================
+
   const getInvestorCategoryUI = (amount) => {
     if (amount < 10000) {
       return {
         level: "⚠ ALERT",
         color: "orange",
-        message:
-          "Capital below ₹10,000 is not suitable for investing or diversification.",
+        message: "Capital below ₹10,000 is not suitable for investing."
       };
-    } else if (amount < 300000) {
+    }
+
+    if (amount < 300000) {
       return {
         level: "🟢 BEGINNER",
         color: "green",
-        message: "Learning & safe phase. Prefer SIP and mutual funds.",
+        message: "Learning phase. Prefer SIP, mutual funds and ETFs."
       };
-    } else if (amount < 1500000) {
+    }
+
+    if (amount < 1500000) {
       return {
         level: "🟡 PROFESSIONAL",
         color: "goldenrod",
-        message: "Real diversification possible across funds and ETFs.",
-      };
-    } else {
-      return {
-        level: "🔴 EXPERT",
-        color: "red",
-        message: "Advanced investing & portfolio strategies possible.",
+        message: "Diversified portfolio across stocks, ETFs and funds."
       };
     }
+
+    return {
+      level: "🔴 EXPERT",
+      color: "red",
+      message: "Advanced investing and portfolio strategies possible."
+    };
   };
 
-  // ===============================
-  // DIVERSIFICATION % (DISPLAY ONLY)
-  // ===============================
-  const getAllocationPercentages = (category) => {
-    if (category === "BEGINNER") {
-      return [
-        { label: "Equity (Index MF)", value: 70 },
-        { label: "Debt MF", value: 20 },
-        { label: "Gold MF", value: 10 },
-      ];
-    }
-
-    if (category === "PROFESSIONAL") {
-      return [
-        { label: "Equity (MF / ETF)", value: 50 },
-        { label: "Debt", value: 25 },
-        { label: "Gold", value: 15 },
-        { label: "Stocks", value: 10 },
-      ];
-    }
-
-    return [
-      { label: "Core Equity", value: 40 },
-      { label: "Stocks", value: 30 },
-      { label: "Debt", value: 15 },
-      { label: "Gold", value: 10 },
-      { label: "Cash Buffer", value: 5 },
-    ];
-  };
-
-  // ===============================
-  // GENERATE PLAN
-  // ===============================
   const generatePlan = async () => {
+
     if (!capital) {
       setError("Please enter capital amount");
       return;
     }
 
     if (Number(capital) < 10000) {
-      setPlan(null);
-      setError("Capital below ₹10,000 is not suitable for investing.");
+      setError("Capital below ₹10,000 not suitable for investing.");
       return;
     }
 
@@ -92,37 +65,75 @@ function InvestmentPlanner() {
     setPlan(null);
 
     try {
+
       const data = await fetchInvestmentPlanner(capital);
-      setPlan(data.investment_plan);
+
+      console.log("FINAL DATA RECEIVED:", JSON.stringify(data, null, 2));
+
+      // ✅ Extract plan — api.js already normalizes it
+      const planData = data?.investment_plan;
+
+      // ✅ Check if plan is valid and has at least one key
+      if (
+        !planData ||
+        typeof planData !== "object" ||
+        Object.keys(planData).length === 0
+      ) {
+        console.error("Empty plan data:", planData);
+        setError("No investment plan returned. Please check your backend.");
+        return;
+      }
+
+      setPlan(planData);
+
     } catch (err) {
-      setError("Failed to fetch investment plan");
+
+      console.error("generatePlan Error:", err);
+      setError("Server busy, please try again.");
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
   const capitalInfo = capital ? getInvestorCategoryUI(Number(capital)) : null;
-  const disableButton = Number(capital) < 10000;
+  const disableButton = !capital || Number(capital) < 10000;
 
   return (
-    <div style={{ padding: "20px", maxWidth: "900px" }}>
+
+    <div style={{ padding: "20px", maxWidth: "1100px" }}>
+
       <h2>SMART RISK MANAGEMENT AND INVESTMENT PLANNER</h2>
 
-      {/* CAPITAL INPUT */}
-      <div style={{ marginBottom: "15px" }}>
+      {/* ===============================
+          CAPITAL INPUT
+      =============================== */}
+
+      <div style={{ marginBottom: "20px" }}>
+
         <input
           type="number"
           placeholder="Enter Capital (₹)"
           value={capital}
-          onChange={(e) => setCapital(e.target.value)}
-          style={{ padding: "10px", width: "250px" }}
+          onChange={(e) => {
+            setCapital(e.target.value);
+            setError("");
+            setPlan(null);
+          }}
+          style={{
+            padding: "10px",
+            width: "250px"
+          }}
         />
+
         <button
           onClick={generatePlan}
           disabled={disableButton}
           style={{
             marginLeft: "10px",
-            padding: "10px",
+            padding: "10px 20px",
             backgroundColor: disableButton ? "#ccc" : "#1e40af",
             color: "white",
             border: "none",
@@ -131,9 +142,13 @@ function InvestmentPlanner() {
         >
           Generate Plan
         </button>
+
       </div>
 
-      {/* CAPITAL CATEGORY TABLE */}
+      {/* ===============================
+          INVESTOR CATEGORY TABLE
+      =============================== */}
+
       <div
         style={{
           padding: "15px",
@@ -143,8 +158,10 @@ function InvestmentPlanner() {
           marginBottom: "20px",
         }}
       >
+
         <h4>Investor Category Based on Capital</h4>
-        <table width="100%" style={{ marginTop: "10px" }}>
+
+        <table style={{ width: "100%" }}>
           <tbody>
             <tr>
               <td>&lt; ₹10,000</td>
@@ -154,23 +171,27 @@ function InvestmentPlanner() {
             <tr>
               <td>₹10,000 – ₹3,00,000</td>
               <td>🟢 Beginner</td>
-              <td>Learning & safe phase</td>
+              <td>Learning phase</td>
             </tr>
             <tr>
               <td>₹3,00,000 – ₹15,00,000</td>
               <td>🟡 Professional</td>
-              <td>Real diversification</td>
+              <td>Diversified investing</td>
             </tr>
             <tr>
               <td>₹15,00,000+</td>
               <td>🔴 Expert</td>
-              <td>Advanced investing</td>
+              <td>Advanced portfolio strategies</td>
             </tr>
           </tbody>
         </table>
+
       </div>
 
-      {/* USER CATEGORY */}
+      {/* ===============================
+          USER CATEGORY MESSAGE
+      =============================== */}
+
       {capitalInfo && (
         <div
           style={{
@@ -186,78 +207,102 @@ function InvestmentPlanner() {
         </div>
       )}
 
-      {loading && <p>Loading investment plan...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {loading && <p>⏳ Generating investment plan, please wait...</p>}
 
-      {/* RESULT */}
+      {error && (
+        <p style={{ color: "red", fontWeight: "bold" }}>
+          ⚠ {error}
+        </p>
+      )}
+
+      {/* ===============================
+          RESULT
+      =============================== */}
+
       {plan && (
+
         <>
-          <h3>Market Risk Signal</h3>
-          <TrafficLight signal={plan.traffic_light} />
 
-          <p>
-            <strong>Diversification:</strong>{" "}
-            {plan.diversification_status}
-          </p>
+          {/* PIE CHART */}
+          {plan?.asset_allocation && (
+            <AllocationPieChart allocation={plan.asset_allocation} />
+          )}
 
-          <h4>Investment Priority</h4>
-          <ol>
-            {plan.investment_priority.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ol>
+          {/* ALLOCATION CARD */}
+          {plan?.asset_allocation && (
+            <AllocationCard
+              allocation={plan.asset_allocation}
+              cashReserve={plan.cash_reserve}
+            />
+          )}
 
-          {/* ✅ PIE CHART ADDED HERE */}
-          <h4>Suggested Diversification (%)</h4>
-          <AllocationPieChart
-            data={getAllocationPercentages(plan.investor_category)}
-          />
+          {/* AI EXPLANATION */}
+          {plan?.ai_summary && (
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "20px",
+                borderRadius: "10px",
+                border: "1px solid #ddd",
+                backgroundColor: "#f3f4f6"
+              }}
+            >
+              <h3>AI Financial Doctor Explanation</h3>
+              <p style={{ whiteSpace: "pre-line" }}>
+                {plan.ai_summary}
+              </p>
+            </div>
+          )}
 
-          {/* PERCENTAGE CARDS */}
-          <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-            {getAllocationPercentages(plan.investor_category).map(
-              (item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: "12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    minWidth: "160px",
-                    backgroundColor: "#f9fafb",
-                  }}
-                >
-                  <strong>{item.label}</strong>
-                  <p style={{ fontSize: "20px", marginTop: "5px" }}>
-                    {item.value}%
-                  </p>
-                </div>
-              )
-            )}
-          </div>
-
-          <h4>Affordable Assets (Executable)</h4>
-          {plan.affordable_assets.map((asset, index) => (
-            <AssetCard key={index} asset={asset} />
-          ))}
-
-          {plan.blocked_assets.length > 0 && (
+          {/* PORTFOLIO */}
+          {plan?.portfolio?.length > 0 && (
             <>
-              <h4>Blocked Assets (Not Executable)</h4>
+              <h3 style={{ marginTop: "25px" }}>Investment Portfolio</h3>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "15px",
+                  flexWrap: "wrap"
+                }}
+              >
+                {plan.portfolio.map((asset, index) => (
+                  <AssetCard key={index} asset={asset} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* BLOCKED ASSETS */}
+          {plan?.blocked_assets?.length > 0 && (
+            <>
+              <h4 style={{ marginTop: "20px" }}>Blocked Assets</h4>
               {plan.blocked_assets.map((asset, index) => (
-                <AssetCard key={index} asset={asset} type="blocked" />
+                <AssetCard
+                  key={index}
+                  asset={asset}
+                  type="blocked"
+                />
               ))}
             </>
           )}
 
-          <p>
-            <strong>Education:</strong> {plan.education}
-          </p>
-          <p>
-            <strong>Next Step:</strong> {plan.next_step}
-          </p>
+          {/* TOTALS */}
+          {plan?.total_invested !== undefined && (
+            <p style={{ marginTop: "20px" }}>
+              <strong>Total Invested:</strong> ₹{plan.total_invested.toFixed(2)}
+            </p>
+          )}
+
+          {plan?.final_remaining_cash !== undefined && (
+            <p>
+              <strong>Remaining Cash:</strong> ₹{plan.final_remaining_cash.toFixed(2)}
+            </p>
+          )}
+
         </>
+
       )}
+
     </div>
   );
 }

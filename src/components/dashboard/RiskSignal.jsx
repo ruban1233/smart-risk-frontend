@@ -1,11 +1,23 @@
-import "./RiskSignal.css";
+export default function RiskSignal({ risk }) {
 
-export default function RiskSignal() {
+  if (!risk) {
+    return <p>No risk data</p>;
+  }
+
   return (
-    <div className="risk-card">
-      <h3>Traffic Light Risk</h3>
-      <p className="green">🟢 GREEN</p>
-      <p>Market conditions are safe</p>
+    <div
+      style={{
+        background: risk.risk_color || "gray",
+        padding: "10px",
+        color: "white",
+        marginTop: "10px"
+      }}
+    >
+      <h3>Risk Signal: {risk.signal}</h3>
+
+      {risk.reasons?.map((r, i) => (
+        <p key={i}>{r}</p>
+      ))}
     </div>
   );
 }

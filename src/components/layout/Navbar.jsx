@@ -1,15 +1,26 @@
-import { Link } from "react-router-dom";
+/**
+ * Navbar.jsx
+ * Path: D:\FRONTEND\SMARTFIN\SRC\components\layout\Navbar.jsx
+ */
+
+import React from "react";
+import { NavLink } from "react-router-dom";
 import "./Navbar.css";
 
-export default function Navbar() {
+function Navbar() {
   return (
-    <div className="navbar">
-      <h2>🧠 AI Financial Doctor</h2>
-      <div>
-        <Link to="/">Home</Link>
-        <Link to="/dashboard">Risk Dashboard</Link>
-        <Link to="/investment">Investment Planner</Link>
+    <nav className="navbar">
+      <div className="navbar-brand">
+        🧠 AI Financial Doctor
       </div>
-    </div>
+      <div className="navbar-links">
+        <NavLink to="/"               className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Home</NavLink>
+        <NavLink to="/dashboard"      className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Risk Dashboard</NavLink>
+        <NavLink to="/investment"     className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Investment Planner</NavLink>
+        <NavLink to="/option-trading" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Option Trading</NavLink>
+      </div>
+    </nav>
   );
 }
+
+export default Navbar;

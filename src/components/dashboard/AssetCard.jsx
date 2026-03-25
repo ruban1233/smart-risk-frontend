@@ -1,57 +1,56 @@
 import React from "react";
 
-function AssetCard({ asset, type = "affordable" }) {
+function AssetCard({ asset, type }) {
+
+  if (!asset) return null;
+
   const isBlocked = type === "blocked";
 
   return (
     <div
       style={{
-        border: `2px solid ${isBlocked ? "#dc2626" : "#16a34a"}`,
+        border: "1px solid #e5e7eb",
         borderRadius: "8px",
-        padding: "15px",
-        marginBottom: "15px",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        padding: "12px",
+        width: "220px",
+        backgroundColor: isBlocked ? "#fff5f5" : "#f9fafb",
       }}
     >
-      <h4 style={{ marginBottom: "8px" }}>
-        {asset.name}{" "}
-        <span style={{ fontSize: "14px", color: "#555" }}>
-          ({asset.type})
-        </span>
-      </h4>
 
-      {asset.price && (
-        <p>
-          <strong>Price:</strong> ₹{asset.price}
-        </p>
-      )}
+      <h4>{asset.asset}</h4>
 
-      {!isBlocked && asset.units !== undefined && (
+      {!isBlocked ? (
+
         <>
-          <p>
-            <strong>Units you can buy:</strong> {asset.units}
+
+          <p>Price: ₹{asset.price?.toFixed(2)}</p>
+
+          <p>Units you can buy: {asset.units}</p>
+
+          <p>Total cost: ₹{asset.invested?.toFixed(2)}</p>
+
+          <p>Remaining cash: ₹{asset.remaining_from_allocation?.toFixed(2)}</p>
+
+          <p style={{ color: "green", fontWeight: "bold" }}>
+            ✅ Executable
           </p>
-          <p>
-            <strong>Total cost:</strong> ₹{asset.total_cost}
-          </p>
-          <p>
-            <strong>Remaining cash:</strong> ₹{asset.remaining_cash}
-          </p>
+
         </>
+
+      ) : (
+
+        <>
+
+          <p style={{ color: "red", fontWeight: "bold" }}>
+            ❌ Not Executable
+          </p>
+
+          <p>{asset.reason}</p>
+
+        </>
+
       )}
 
-      <p
-        style={{
-          marginTop: "10px",
-          color: isBlocked ? "#dc2626" : "#16a34a",
-          fontWeight: "bold",
-        }}
-      >
-        {isBlocked ? "❌ Not Executable" : "✅ Executable"}
-      </p>
-
-      <small style={{ color: "#555" }}>{asset.reason}</small>
     </div>
   );
 }
