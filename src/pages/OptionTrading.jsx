@@ -1,11 +1,14 @@
 /**
  * OptionTrading.jsx
- * Path: D:\FRONTEND\SMARTFIN\SRC\pages\OptionTrading.jsx
+ * Path: frontend/src/pages/OptionTrading.jsx
  *
  * ✅ Shows Expiry Date (auto-detected weekly/monthly)
  * ✅ Shows Days to Expiry countdown
  * ✅ Real Greeks from SmartAPI (Delta, Gamma, Theta, Vega, IV)
- * ✅ CE + PE Greeks side by side
+ * ✅ CE + PE Greeks side by side (table + card view)
+ * ✅ IV Level analysis (Low / Normal / High / Extreme)
+ * ✅ Reads from data.greeks.ce / data.greeks.pe (new structure)
+ *    with fallback to data.ce_greeks / data.pe_greeks (old structure)
  */
 
 import React, { useState, useEffect } from "react";
@@ -35,6 +38,13 @@ const RISK_COLOR = {
   LOW:    { bg: "#dcfce7", text: "#15803d" },
   MEDIUM: { bg: "#fef9c3", text: "#92400e" },
   HIGH:   { bg: "#fee2e2", text: "#991b1b" },
+};
+
+const IV_LEVEL_STYLE = {
+  Low:     { color: "#2563eb", bg: "#eff6ff", emoji: "📉" },
+  Normal:  { color: "#16a34a", bg: "#f0fdf4", emoji: "✅" },
+  High:    { color: "#d97706", bg: "#fffbeb", emoji: "📈" },
+  Extreme: { color: "#dc2626", bg: "#fef2f2", emoji: "🔥" },
 };
 
 // ============================================================
@@ -125,7 +135,7 @@ const Card = ({ label, value, sub, color = "#111827", borderTop, bg = "#fff" }) 
 );
 
 // ============================================================
-// ✅ EXPIRY CARD (NEW)
+// EXPIRY CARD
 // ============================================================
 
 const ExpiryCard = ({ expiry_display, days_to_expiry }) => {
@@ -203,13 +213,99 @@ const TrafficLight = ({ signal }) => {
 };
 
 // ============================================================
-// ✅ REAL GREEKS PANEL (CE + PE side by side)
+// IV ANALYSIS PANEL (Step 3)
+// ============================================================
+
+const IVAnalysisPanel = ({ iv_analysis }) => {
+  if (!iv_analysis) return null;
+  const level   = iv_analysis.level || "Normal";
+  const style   = IV_LEVEL_STYLE[level] || IV_LEVEL_STYLE.Normal;
+
+  return (
+    <div style={{
+      padding: "14px 18px",
+      border: `1px solid ${style.color}44`,
+      borderLeft: `5px solid ${style.color}`,
+      borderRadius: 10,
+      backgroundColor: style.bg,
+      marginBottom: 24,
+    }}>
+      <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", marginBottom: 6 }}>
+        IV Analysis
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: style.color, marginBottom: 4 }}>
+        {style.emoji} IV Level: {level}
+      </div>
+      {iv_analysis.suggestion && (
+        <div style={{ fontSize: 13, color: "#374151" }}>{iv_analysis.suggestion}</div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================
+// GREEKS TABLE — CE + PE side by side (like Zerodha / Opstra)
+// ============================================================
+
+const GreeksTable = ({ ce, pe, source }) => {
+  const sourceLabel =
+    source === "smartapi" ? "🟢 Live (SmartAPI)" : "🟡 Model (Estimated)";
+
+  const rows = [
+    { key: "delta", label: "Delta" },
+    { key: "gamma", label: "Gamma" },
+    { key: "theta", label: "Theta" },
+    { key: "vega",  label: "Vega"  },
+    { key: "iv",    label: "IV (%)" },
+  ];
+
+  const fmtNum = (v) =>
+    v !== undefined && v !== null ? Number(v).toFixed(4) : "—";
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 10 }}>
+        Source: <strong>{sourceLabel}</strong>
+      </div>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", fontSize: 14, minWidth: 320 }}>
+          <thead>
+            <tr>
+              <th style={TH}></th>
+              <th style={{ ...TH, color: "#92400e", backgroundColor: "#fef9c3" }}>CE</th>
+              <th style={{ ...TH, color: "#15803d", backgroundColor: "#f0fdf4" }}>PE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ key, label }, i) => (
+              <tr key={key} style={{ backgroundColor: i % 2 === 0 ? "#fff" : "#f9fafb" }}>
+                <td style={{ ...TD2, fontWeight: 600, color: "#374151" }}>{label}</td>
+                <td style={{ ...TD2, color: "#92400e", fontWeight: 700 }}>
+                  {fmtNum(ce?.[key])}
+                </td>
+                <td style={{ ...TD2, color: "#15803d", fontWeight: 700 }}>
+                  {fmtNum(pe?.[key])}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const TH  = { padding: "10px 20px", textAlign: "center", fontWeight: 700, fontSize: 13, border: "1px solid #e5e7eb" };
+const TD2 = { padding: "9px 20px",  textAlign: "center", border: "1px solid #f3f4f6" };
+
+// ============================================================
+// GREEKS PANEL — cards view (fallback / Black-Scholes)
 // ============================================================
 
 const GreeksPanel = ({ greeks, ce_greeks, pe_greeks, greeks_source }) => {
-  const sourceLabel = greeks_source === "smartapi" ? "🟢 Live from SmartAPI" : "🟡 Black-Scholes (fallback)";
+  const sourceLabel =
+    greeks_source === "smartapi" ? "🟢 Live from SmartAPI" : "🟡 Black-Scholes (fallback)";
 
-  // Prefer real SmartAPI greeks; fallback to computed
   const displayCE = ce_greeks || greeks;
 
   const greekItems = [
@@ -237,7 +333,7 @@ const GreeksPanel = ({ greeks, ce_greeks, pe_greeks, greeks_source }) => {
           {/* CE Greeks */}
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e", backgroundColor: "#fef9c3", padding: "4px 10px", borderRadius: 6, marginBottom: 8, display: "inline-block" }}>
-              CALL (CE) — Strike {ce_greeks.strike}
+              CALL (CE){ce_greeks.strike ? ` — Strike ${ce_greeks.strike}` : ""}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {greekItems.map(({ key, label, desc, color }) => (
@@ -255,7 +351,7 @@ const GreeksPanel = ({ greeks, ce_greeks, pe_greeks, greeks_source }) => {
           {/* PE Greeks */}
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: "#15803d", backgroundColor: "#f0fdf4", padding: "4px 10px", borderRadius: 6, marginBottom: 8, display: "inline-block" }}>
-              PUT (PE) — Strike {pe_greeks.strike}
+              PUT (PE){pe_greeks.strike ? ` — Strike ${pe_greeks.strike}` : ""}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {greekItems.map(({ key, label, desc, color }) => (
@@ -271,7 +367,7 @@ const GreeksPanel = ({ greeks, ce_greeks, pe_greeks, greeks_source }) => {
           </div>
         </div>
       ) : (
-        /* Single Greeks row (fallback BS) */
+        /* Single row fallback (Black-Scholes) */
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
           {greekItems.map(({ key, label, desc, color }) => (
             <div key={key} style={{ flex: "1 1 130px", padding: "14px 16px", border: "1px solid #e5e7eb", borderTop: `4px solid ${color}`, borderRadius: 10, backgroundColor: "#fff", textAlign: "center" }}>
@@ -392,33 +488,29 @@ const SH = { fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: 12, 
 // ============================================================
 
 function OptionTrading() {
-  const [symbol,  setSymbol]  = useState("NIFTY");
-  const [capital, setCapital] = useState("");
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState("");
-  const [elapsed, setElapsed] = useState(0);
-
-  // ✅ NEW: expiry state
-  const [expiry, setExpiry] = useState("");
+  const [symbol,     setSymbol]     = useState("NIFTY");
+  const [capital,    setCapital]    = useState("");
+  const [data,       setData]       = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState("");
+  const [elapsed,    setElapsed]    = useState(0);
+  const [expiry,     setExpiry]     = useState("");
   const [expiryList, setExpiryList] = useState([]);
 
-  // ✅ loading timer
+  // Loading timer
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
     const t = setInterval(() => setElapsed(s => s + 1), 1000);
     return () => clearInterval(t);
   }, [loading]);
 
-  // ✅ LOAD EXPIRIES WHEN SYMBOL CHANGES
+  // Load expiries when symbol changes
   useEffect(() => {
     const loadExpiries = async () => {
       try {
         const list = await fetchExpiries(symbol);
         console.log("EXPIRIES:", list);
         setExpiryList(list || []);
-
-        // auto select first expiry
         if (list && list.length > 0) {
           setExpiry(list[0]);
         } else {
@@ -430,7 +522,6 @@ function OptionTrading() {
         setExpiry("");
       }
     };
-
     loadExpiries();
   }, [symbol]);
 
@@ -449,7 +540,6 @@ function OptionTrading() {
     setError("");
     setData(null);
 
-    // ✅ pass expiry to backend
     const result = await fetchSmartRisk(symbol, cap, expiry);
     console.log("RESULT:", result);
 
@@ -461,13 +551,19 @@ function OptionTrading() {
     setLoading(false);
   };
 
-  // ── Derived values ──────────────────────────────────────
+  // ── Derived values
   const strategy    = data?.strategy;
   const capData     = data?.capital_data;
   const investorLvl = capData?.investor_level;
   const badge       = investorLvl ? (INVESTOR_STYLE[investorLvl.level] || INVESTOR_STYLE.BEGINNER) : null;
   const riskStyle   = strategy ? (RISK_COLOR[strategy.risk] || RISK_COLOR.MEDIUM) : null;
   const atm         = data?.atm_price ?? data?.atm_used ?? null;
+
+  // ── Greeks — support both new and old backend structure
+  const ce_greeks     = data?.greeks?.ce  ?? data?.ce_greeks  ?? null;
+  const pe_greeks     = data?.greeks?.pe  ?? data?.pe_greeks  ?? null;
+  const greeks_source = data?.greeks?.source ?? data?.greeks_source ?? "fallback";
+  const greeks_flat   = data?.greeks_flat ?? data?.greeks ?? {};
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", fontFamily: "system-ui, sans-serif" }}>
@@ -495,25 +591,16 @@ function OptionTrading() {
           <option value="FINNIFTY">FINNIFTY</option>
         </select>
 
-        {/* ✅ NEW EXPIRY DROPDOWN */}
+        {/* Expiry Dropdown */}
         <select
           value={expiry}
-          onChange={(e) => setExpiry(e.target.value)}
+          onChange={e => setExpiry(e.target.value)}
           disabled={loading || expiryList.length === 0}
-          style={{
-            padding: "10px 14px",
-            fontSize: 14,
-            borderRadius: 8,
-            border: "1px solid #d1d5db",
-            background: "#fff",
-            cursor: "pointer"
-          }}
+          style={{ padding: "10px 14px", fontSize: 14, borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" }}
         >
           <option value="">Select Expiry</option>
           {expiryList.map((exp, i) => (
-            <option key={i} value={exp}>
-              {exp}
-            </option>
+            <option key={i} value={exp}>{exp}</option>
           ))}
         </select>
 
@@ -533,7 +620,7 @@ function OptionTrading() {
             padding: "10px 24px", fontSize: 14, fontWeight: 600, borderRadius: 8,
             border: "none", backgroundColor: "#1e40af", color: "#fff",
             opacity: loading || !capital || Number(capital) < 5000 || !expiry ? 0.5 : 1,
-            cursor: loading || !capital || Number(capital) < 5000 || !expiry ? "not-allowed" : "pointer",
+            cursor:  loading || !capital || Number(capital) < 5000 || !expiry ? "not-allowed" : "pointer",
             transition: "opacity 0.2s",
           }}
         >
@@ -567,15 +654,14 @@ function OptionTrading() {
 
             <TrafficLight signal={data.traffic_signal} />
 
-            {/* ✅ EXPIRY CARD */}
             <ExpiryCard
               expiry_display={data.expiry_display}
               days_to_expiry={data.days_to_expiry}
             />
 
-            <Card label="Market Trend"           value={data.trend || "—"}  sub={`IV: ${data.iv_percentile ?? "—"}%`} color="#1e40af" />
-            <Card label={`ATM (${data.symbol})`} value={atm ?? "—"}         sub={`Lot: ${data.lot_size ?? "—"} units`} color="#7c3aed" />
-            <Card label="Spot Price"             value={data.spot ?? "—"}   color="#111827" />
+            <Card label="Market Trend"           value={data.trend || "—"} sub={`IV: ${data.iv_percentile ?? "—"}%`} color="#1e40af" />
+            <Card label={`ATM (${data.symbol})`} value={atm ?? "—"}        sub={`Lot: ${data.lot_size ?? "—"} units`} color="#7c3aed" />
+            <Card label="Spot Price"             value={data.spot ?? "—"}  color="#111827" />
           </div>
 
           {/* STRATEGY BOX */}
@@ -594,7 +680,6 @@ function OptionTrading() {
                 <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 6, backgroundColor: "#f3e8ff", color: "#6b21a8" }}>
                   {strategy.legs} LEG{strategy.legs > 1 ? "S" : ""}
                 </span>
-                {/* ✅ Expiry inline in strategy box */}
                 {data.expiry_display && (
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 6, backgroundColor: "#f0fdf4", color: "#15803d" }}>
                     📅 {data.expiry_display} ({data.days_to_expiry}d)
@@ -621,16 +706,30 @@ function OptionTrading() {
             </div>
           )}
 
-          {/* ✅ REAL GREEKS (CE + PE) */}
+          {/* ✅ GREEKS SECTION — Table (Step 2) + IV Analysis (Step 3) */}
           <div style={{ marginBottom: 24 }}>
             <h3 style={SH}>Option Greeks</h3>
-            <GreeksPanel
-              greeks={data.greeks}
-              ce_greeks={data.ce_greeks}
-              pe_greeks={data.pe_greeks}
-              greeks_source={data.greeks_source}
+
+            {/* Table view — CE vs PE side by side (like Zerodha / Opstra) */}
+            <GreeksTable
+              ce={ce_greeks}
+              pe={pe_greeks}
+              source={greeks_source}
             />
+
+            {/* Card view — detailed with labels (shown below table) */}
+            <div style={{ marginTop: 20 }}>
+              <GreeksPanel
+                greeks={greeks_flat}
+                ce_greeks={ce_greeks}
+                pe_greeks={pe_greeks}
+                greeks_source={greeks_source}
+              />
+            </div>
           </div>
+
+          {/* ✅ IV ANALYSIS (Step 3) */}
+          <IVAnalysisPanel iv_analysis={data.iv_analysis} />
 
           {/* PAYOFF CHART */}
           {data.payoff?.length > 0 && (
@@ -661,16 +760,30 @@ function OptionTrading() {
             </div>
           )}
 
+          {/* SIGNAL ADVICE */}
+          {data.signal_advice?.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <h3 style={SH}>Signal Advice</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {data.signal_advice.map((advice, i) => (
+                  <div key={i} style={{ padding: "10px 14px", border: "1px solid #fde68a", borderRadius: 8, backgroundColor: "#fffbeb", fontSize: 13, color: "#92400e" }}>
+                    {advice}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* CAPITAL ANALYSIS */}
           {capData && (
             <div style={{ marginBottom: 24 }}>
               <h3 style={SH}>Capital Analysis</h3>
               <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-                <Card label="Total Capital"    value={fmt(capData.capital)}                                             borderTop="#6b7280" />
-                <Card label="Deploy (30%)"     value={fmt(capData.deploy_capital)}            color="#16a34a"          borderTop="#16a34a" />
-                <Card label="Reserve (70%)"    value={fmt(capData.reserve_capital)}           color="#2563eb"          borderTop="#2563eb" />
+                <Card label="Total Capital"    value={fmt(capData.capital)}                                                      borderTop="#6b7280" />
+                <Card label="Deploy (30%)"     value={fmt(capData.deploy_capital)}            color="#16a34a"                    borderTop="#16a34a" />
+                <Card label="Reserve (70%)"    value={fmt(capData.reserve_capital)}           color="#2563eb"                    borderTop="#2563eb" />
                 <Card label="Max Loss / Trade" value={fmt(capData.risk_per_trade?.max_loss_per_trade)} color="#dc2626"
-                  sub={`${capData.risk_per_trade?.risk_pct}% risk rule`}                                                    borderTop="#dc2626" />
+                  sub={`${capData.risk_per_trade?.risk_pct}% risk rule`}                                                         borderTop="#dc2626" />
               </div>
             </div>
           )}
