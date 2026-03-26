@@ -17,7 +17,7 @@ export default function Dashboard() {
     setLoading(true);
 
     try {
-      const res = await fetchSmartRisk(symbol, capital);
+      const res = await fetchSmartRisk(symbol, capital,expiry);
       setData(res);
     } catch (err) {
       console.error(err);

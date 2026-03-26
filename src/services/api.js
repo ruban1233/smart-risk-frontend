@@ -2,42 +2,60 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api/",
-  timeout: 120000,   // 🔥 change 60s → 120s
+  timeout: 120000,
   headers: { "Content-Type": "application/json" },
 });
 
-export const fetchSmartRisk = async (symbol, capital) => {
+const handleApiError = (err, defaultMessage = "API error") => {
+  console.error("API Error:", err?.message || err);
+  if (err?.code === "ECONNABORTED") {
+    return { error: true, message: "Server took too long." };
+  }
+  return { error: true, message: err?.message || defaultMessage };
+};
+
+export const fetchHealth = async () => {
   try {
-    const res = await api.get("smartrisk/", { params: { symbol, capital } });
-    console.log("SmartRisk RAW:", res.data);
-    if (!res.data || Object.keys(res.data).length === 0) {
-      return { error: true, message: "Empty response from backend." };
-    }
-    return res.data;
+    const res = await api.get("health/");
+    return res.data || {};
   } catch (err) {
-    console.error("SmartRisk Error:", err.message);
-    if (err.code === "ECONNABORTED") {
-      return { error: true, message: "Server took too long. Backend is fetching live data — please wait and try again." };
-    }
-    if (err.code === "ERR_NETWORK") {
-      return { error: true, message: "Cannot connect to Django. Is server running on port 8000?" };
-    }
-    if (err.response) {
-      return { error: true, message: `Server error ${err.response.status}: ${JSON.stringify(err.response.data)}` };
-    }
-    return { error: true, message: err.message };
+    return handleApiError(err);
   }
 };
 
-export const fetchInvestmentPlanner = async (capital) => {
+export const fetchAngelLogin = async () => {
   try {
-    const res = await api.get("investment-planner/", { params: { capital } });
-    const raw = res.data;
-    const plan = raw?.investment_plan || raw?.plan || raw?.data || raw || {};
-    return { investment_plan: plan };
+    const res = await api.get("angel-login/");
+    return res.data || {};
   } catch (err) {
-    console.error("InvestmentPlanner Error:", err);
-    return { investment_plan: {} };
+    return handleApiError(err);
+  }
+};
+
+export const fetchMarketStatus = async () => {
+  try {
+    const res = await api.get("market-status/");
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+export const fetchLtp = async (symbol = "NIFTY") => {
+  try {
+    const res = await api.get("ltp/", { params: { symbol } });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+export const fetchAtmStrike = async (symbol = "NIFTY") => {
+  try {
+    const res = await api.get("atm-strike/", { params: { symbol } });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
   }
 };
 
@@ -46,16 +64,118 @@ export const fetchMarketSentiment = async (symbol = "NIFTY") => {
     const res = await api.get("market-sentiment/", { params: { symbol } });
     return res.data || {};
   } catch (err) {
-    return { error: true };
+    return handleApiError(err);
   }
 };
 
-export const fetchOptionChain = async (symbol = "NIFTY") => {
+export const fetchOptionChainAnalysis = async (symbol = "NIFTY") => {
   try {
-    const res = await api.get("full-option-chain/", { params: { symbol } });
+    const res = await api.get("option-chain-analysis/", { params: { symbol } });
     return res.data || {};
   } catch (err) {
-    return { error: true };
+    return handleApiError(err);
+  }
+};
+
+export const fetchSmartRisk = async (symbol, capital, expiry = null) => {
+  try {
+    const params = { symbol, capital };
+
+    // Only send expiry if explicitly provided
+    if (expiry) {
+      params.expiry = expiry;
+    }
+
+    const res = await api.get("smartrisk/", { params });
+
+    console.log("SmartRisk RAW:", res.data);
+
+    if (!res.data || Object.keys(res.data).length === 0) {
+      return { error: true, message: "Empty response from backend." };
+    }
+
+    return res.data;
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+export const fetchInvestmentPlanner = async (capital, risk = "low", symbol = "NIFTY") => {
+  try {
+    const res = await api.get("investment-planner/", { params: { capital, risk, symbol } });
+    const raw = res.data;
+    const plan = raw?.plan || raw?.investment_plan || {};
+    return {
+      capital: raw?.capital ?? capital,
+      market_trend: raw?.market_trend ?? "Sideways",
+      plan: plan,
+      ...raw,
+    };
+  } catch (err) {
+    return handleApiError(err, { capital, market_trend: "Sideways", plan: {} });
+  }
+};
+
+export const fetchOptionDoctor = async (symbol = "NIFTY", strike = 0) => {
+  try {
+    const res = await api.get("option-doctor/", { params: { symbol, strike } });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+export const fetchIvTest = async (iv) => {
+  try {
+    const res = await api.get("iv-test/", { params: { iv } });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+export const fetchOptionGreeks = async (symbol = "NIFTY", expiry = null, monthly = false) => {
+  try {
+    const res = await api.get("option-greeks/", {
+      params: { symbol, expiry, monthly: monthly ? "true" : "false" },
+    });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+export const fetchTestOptionPrice = async (symbol = "NIFTY", strike = 0) => {
+  try {
+    const res = await api.get("test-option-price/", { params: { symbol, strike } });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+export const fetchFullOptionChain = async (symbol = "NIFTY", expiry = null) => {
+  try {
+    const params = { symbol };
+
+    if (expiry) {
+      params.expiry = expiry;
+    }
+
+    const res = await api.get("full-option-chain/", { params });
+
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+
+
+export const fetchAiStrategy = async (symbol = "NIFTY", capital = 10000, iv = 15) => {
+  try {
+    const res = await api.get("ai-strategy/", { params: { symbol, capital, iv } });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
   }
 };
 
@@ -64,7 +184,27 @@ export const fetchPayoff = async (symbol = "NIFTY") => {
     const res = await api.get("payoff/", { params: { symbol } });
     return res.data || {};
   } catch (err) {
-    return { error: true };
+    return handleApiError(err);
+  }
+};
+
+export const fetchExpiryInfo = async (symbol = "NIFTY") => {
+  try {
+    const res = await api.get("expiry/", { params: { symbol } });
+    return res.data || {};
+  } catch (err) {
+    return handleApiError(err);
+  }
+};
+export const fetchExpiries = async (symbol = "NIFTY") => {
+  try {
+    const res = await api.get("expiries/", {
+      params: { symbol }
+    });
+    return res.data.expiries || [];
+  } catch (err) {
+    console.error("Expiry fetch error:", err);
+    return [];
   }
 };
 

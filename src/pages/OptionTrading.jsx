@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { fetchSmartRisk } from "../services/api";
+import { fetchSmartRisk, fetchExpiries } from "../services/api";
 import {
   ResponsiveContainer, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
@@ -211,7 +211,6 @@ const GreeksPanel = ({ greeks, ce_greeks, pe_greeks, greeks_source }) => {
 
   // Prefer real SmartAPI greeks; fallback to computed
   const displayCE = ce_greeks || greeks;
-  const displayPE = pe_greeks || null;
 
   const greekItems = [
     { key: "delta", label: "Δ Delta", desc: "Direction sensitivity",  color: "#2563eb" },
@@ -400,11 +399,40 @@ function OptionTrading() {
   const [error,   setError]   = useState("");
   const [elapsed, setElapsed] = useState(0);
 
+  // ✅ NEW: expiry state
+  const [expiry, setExpiry] = useState("");
+  const [expiryList, setExpiryList] = useState([]);
+
+  // ✅ loading timer
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
     const t = setInterval(() => setElapsed(s => s + 1), 1000);
     return () => clearInterval(t);
   }, [loading]);
+
+  // ✅ LOAD EXPIRIES WHEN SYMBOL CHANGES
+  useEffect(() => {
+    const loadExpiries = async () => {
+      try {
+        const list = await fetchExpiries(symbol);
+        console.log("EXPIRIES:", list);
+        setExpiryList(list || []);
+
+        // auto select first expiry
+        if (list && list.length > 0) {
+          setExpiry(list[0]);
+        } else {
+          setExpiry("");
+        }
+      } catch (e) {
+        console.error("Failed to load expiries", e);
+        setExpiryList([]);
+        setExpiry("");
+      }
+    };
+
+    loadExpiries();
+  }, [symbol]);
 
   const handleAnalyze = async () => {
     const cap = Number(capital);
@@ -412,11 +440,17 @@ function OptionTrading() {
       setError("Minimum ₹5,000 required for F&O trading.");
       return;
     }
+    if (!expiry) {
+      setError("Please select an expiry.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setData(null);
 
-    const result = await fetchSmartRisk(symbol, cap);
+    // ✅ pass expiry to backend
+    const result = await fetchSmartRisk(symbol, cap, expiry);
     console.log("RESULT:", result);
 
     if (result?.error) {
@@ -461,6 +495,28 @@ function OptionTrading() {
           <option value="FINNIFTY">FINNIFTY</option>
         </select>
 
+        {/* ✅ NEW EXPIRY DROPDOWN */}
+        <select
+          value={expiry}
+          onChange={(e) => setExpiry(e.target.value)}
+          disabled={loading || expiryList.length === 0}
+          style={{
+            padding: "10px 14px",
+            fontSize: 14,
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            background: "#fff",
+            cursor: "pointer"
+          }}
+        >
+          <option value="">Select Expiry</option>
+          {expiryList.map((exp, i) => (
+            <option key={i} value={exp}>
+              {exp}
+            </option>
+          ))}
+        </select>
+
         <input
           type="number"
           placeholder="Enter Capital (₹)"
@@ -472,12 +528,12 @@ function OptionTrading() {
 
         <button
           onClick={handleAnalyze}
-          disabled={loading || !capital || Number(capital) < 5000}
+          disabled={loading || !capital || Number(capital) < 5000 || !expiry}
           style={{
             padding: "10px 24px", fontSize: 14, fontWeight: 600, borderRadius: 8,
             border: "none", backgroundColor: "#1e40af", color: "#fff",
-            opacity: loading || !capital || Number(capital) < 5000 ? 0.5 : 1,
-            cursor: loading || !capital || Number(capital) < 5000 ? "not-allowed" : "pointer",
+            opacity: loading || !capital || Number(capital) < 5000 || !expiry ? 0.5 : 1,
+            cursor: loading || !capital || Number(capital) < 5000 || !expiry ? "not-allowed" : "pointer",
             transition: "opacity 0.2s",
           }}
         >
@@ -519,7 +575,7 @@ function OptionTrading() {
 
             <Card label="Market Trend"           value={data.trend || "—"}  sub={`IV: ${data.iv_percentile ?? "—"}%`} color="#1e40af" />
             <Card label={`ATM (${data.symbol})`} value={atm ?? "—"}         sub={`Lot: ${data.lot_size ?? "—"} units`} color="#7c3aed" />
-            <Card label="Spot Price"              value={data.spot ?? "—"}   color="#111827" />
+            <Card label="Spot Price"             value={data.spot ?? "—"}   color="#111827" />
           </div>
 
           {/* STRATEGY BOX */}
@@ -610,11 +666,11 @@ function OptionTrading() {
             <div style={{ marginBottom: 24 }}>
               <h3 style={SH}>Capital Analysis</h3>
               <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-                <Card label="Total Capital"    value={fmt(capData.capital)}                                                     borderTop="#6b7280" />
-                <Card label="Deploy (30%)"     value={fmt(capData.deploy_capital)}            color="#16a34a"                   borderTop="#16a34a" />
-                <Card label="Reserve (70%)"    value={fmt(capData.reserve_capital)}           color="#2563eb"                   borderTop="#2563eb" />
+                <Card label="Total Capital"    value={fmt(capData.capital)}                                             borderTop="#6b7280" />
+                <Card label="Deploy (30%)"     value={fmt(capData.deploy_capital)}            color="#16a34a"          borderTop="#16a34a" />
+                <Card label="Reserve (70%)"    value={fmt(capData.reserve_capital)}           color="#2563eb"          borderTop="#2563eb" />
                 <Card label="Max Loss / Trade" value={fmt(capData.risk_per_trade?.max_loss_per_trade)} color="#dc2626"
-                  sub={`${capData.risk_per_trade?.risk_pct}% risk rule`}                                                        borderTop="#dc2626" />
+                  sub={`${capData.risk_per_trade?.risk_pct}% risk rule`}                                                    borderTop="#dc2626" />
               </div>
             </div>
           )}
